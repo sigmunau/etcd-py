@@ -47,7 +47,7 @@ class EtcdError(BaseException):
 class Etcd(object):
     """Talks to an etcd instance"""
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, ssl_cert=None,
-                 ssl_key=None, follow_leader=True, autostart=True):
+                 ssl_key=None, follow_leader=True, autostart=True, verify=True):
         """
         host: sets the hostname or IP address of the etcd server
         port: sets the port that the server is listening on
@@ -55,6 +55,9 @@ class Etcd(object):
         follow_leader: if True we will always try to follow the current leader
             (not yet implemented fully!)
         autostart: start the client from the constructor
+        verify: set to True to verify server with the systems trusted cas.
+            False disables verification. Set to the path to a ca bundle to verify
+            using that certificate
         Note: ssl_cert may be set to a file containing both certificate and
             key
         """
@@ -70,6 +73,7 @@ class Etcd(object):
             schema = "https"
         else:
             schema = "http"
+        self.verify = verify
         self.base_url = "{}://{}:{}".format(schema, host, port)
         self.current_leader = None
         self.follow_leader = follow_leader
@@ -110,7 +114,7 @@ class Etcd(object):
         if ttl:
             data['ttl'] = ttl
         req = self.requests.post(KEYS_URL.format(self.base_url, key), data,
-                                 cert=self.ssl_conf)
+                                 cert=self.ssl_conf, verify=self.verify)
         res = req.json()
         if 'newKey' not in res:
             res['newKey'] = False
@@ -128,7 +132,7 @@ class Etcd(object):
         key: the key to retrieve the value for
         """
         req = self.requests.get(KEYS_URL.format(self.base_url, key),
-                                cert=self.ssl_conf)
+                                cert=self.ssl_conf, verify=self.verify)
         res = req.json()
         if isinstance(res, list):
             raise ValueError('Key "%s" is a directory, expecting leaf (use \
@@ -143,7 +147,7 @@ list() to get directory listing).' % key)
         key: the key to retrieve the value for
         """
         req = self.requests.get(LIST_URL.format(self.base_url, key),
-                                cert=self.ssl_conf)
+                                cert=self.ssl_conf, verify=self.verify)
         result = req.json()
         if 'errorCode' in result:
             raise EtcdError(result['errorCode'], result['message'])
@@ -174,7 +178,7 @@ get() to get leaf).' % key)
         key: the key to delete
         """
         req = self.requests.delete(KEYS_URL.format(self.base_url, key),
-                                   cert=self.ssl_conf)
+                                   cert=self.ssl_conf, verify=self.verify)
         res = req.json()
         if 'errorCode' in res:
             raise EtcdError(res['errorCode'], res['message'])
@@ -196,10 +200,11 @@ get() to get leaf).' % key)
                 req = self.requests.post(WATCH_URL.format(self.base_url, path),
                                          {'index': index},
                                          timeout=timeout,
-                                         cert=self.ssl_conf)
+                                         cert=self.ssl_conf, verify=self.verify)
             else:
                 req = self.requests.get(WATCH_URL.format(self.base_url, path),
-                                        timeout=timeout, cert=self.ssl_conf)
+                                        timeout=timeout, cert=self.ssl_conf,
+                                        verify=self.verify)
         except requests.exceptions.Timeout:
             return None
         res = req.json()
@@ -227,7 +232,7 @@ get() to get leaf).' % key)
         if ttl:
             data['ttl'] = ttl
         req = self.requests.post(KEYS_URL.format(self.base_url, key), data,
-                                 cert=self.ssl_conf)
+                                 cert=self.ssl_conf, verify=self.verify)
         res = req.json()
         if 'expiration' not in res:
             res['expiration'] = None
@@ -242,12 +247,12 @@ get() to get leaf).' % key)
     def machines(self):
         """Returns a list of machines in the cluster"""
         req = self.requests.get(MACHINES_URL.format(self.base_url),
-                                cert=self.ssl_conf)
+                                cert=self.ssl_conf, verify=self.verify)
         self.machines_cache = req.text.split(', ')
         return self.machines_cache
 
     def leader(self):
         """Returns the leader"""
         req = self.requests.get(LEADER_URL.format(self.base_url),
-                                cert=self.ssl_conf)
+                                cert=self.ssl_conf, verify=self.verify)
         return req.text
