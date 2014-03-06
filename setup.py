@@ -7,7 +7,7 @@ def read(filename):
     return open(filename).read()
 
 setup(name="etcd-py",
-      version="0.0.6",
+      version="0.0.7",
       description="Client for Etcd",
       long_description=read("README.rst"),
       author="Kris Foster",

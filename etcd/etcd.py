@@ -24,7 +24,7 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 4001
 
 KEYS_URL = "{}/v1/keys/{}"
-WATCH_URL = "{}/v1/watch/{}"
+WATCH_URL = "{}/v2/keys/{}"
 MACHINES_URL = "{}/v1/machines"
 LEADER_URL = "{}/v1/leader"
 LIST_URL = "{}/v1/keys/{}/"
@@ -197,12 +197,15 @@ get() to get leaf).' % key)
         """
         try:
             if index:
-                req = self.requests.post(WATCH_URL.format(self.base_url, path),
-                                         {'index': index},
-                                         timeout=timeout,
-                                         cert=self.ssl_conf, verify=self.verify)
+                req = self.requests.get(WATCH_URL.format(self.base_url, path),
+                                        {'waitIndex': index,
+                                         'recursive': 'true',
+                                         'wait': 'true'},
+                                        timeout=timeout,
+                                        cert=self.ssl_conf, verify=self.verify)
             else:
                 req = self.requests.get(WATCH_URL.format(self.base_url, path),
+                                        {'wait': 'true', 'recursive': 'true'},
                                         timeout=timeout, cert=self.ssl_conf,
                                         verify=self.verify)
         except requests.exceptions.Timeout:
