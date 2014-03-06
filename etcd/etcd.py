@@ -210,7 +210,14 @@ get() to get leaf).' % key)
                                         verify=self.verify)
         except requests.exceptions.Timeout:
             return None
-        res = req.json()
+        resv2 = req.json()
+        res = {}
+        res['key'] = resv2['node']['key']
+        if 'value' in resv2['node']:
+            res['value'] = resv2['node']['value']
+        res['action'] = resv2['action']
+        res['index'] = resv2['node']['modifiedIndex']
+
         if 'newKey' not in res:
             res['newKey'] = False
         if 'expiration' not in res:
