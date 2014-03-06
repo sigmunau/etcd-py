@@ -198,14 +198,14 @@ get() to get leaf).' % key)
         try:
             if index:
                 req = self.requests.get(WATCH_URL.format(self.base_url, path),
-                                        {'waitIndex': index,
-                                         'recursive': 'true',
-                                         'wait': 'true'},
+                                        params={'waitIndex': index,
+                                                'recursive': 'true',
+                                                'wait': 'true'},
                                         timeout=timeout,
                                         cert=self.ssl_conf, verify=self.verify)
             else:
                 req = self.requests.get(WATCH_URL.format(self.base_url, path),
-                                        {'wait': 'true', 'recursive': 'true'},
+                                        params={'wait': 'true', 'recursive': 'true'},
                                         timeout=timeout, cert=self.ssl_conf,
                                         verify=self.verify)
         except requests.exceptions.Timeout:
